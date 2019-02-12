@@ -37,8 +37,12 @@ install:
 
 before_script:
   - make setup_tests
-  - until kubectl get nodes 2>&1 | sed -n 2p | grep -q Ready; do sleep 1 && kubectl get nodes; done
 
-script:
-  - make test
+jobs:
+  include:
+    - stage: functional test suite
+      script: make test
+      env: INFRASTRUCTURE=single-kong-postgres PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=xenial
+    - script: make test
+      env: INFRASTRUCTURE=single-kong-single-cassandra PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=xenial
 
