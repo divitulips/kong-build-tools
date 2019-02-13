@@ -16,7 +16,7 @@ docker push localhost:5000/kong
 helm init --wait
 helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
 helm repo update
-helm install --dep-up --name kong --set cassandra.config.cluster_size=1,cassandra.enabled=true,env.db_update_propagation=2,env.database=cassandra,cassandra.enabled=true,postgresql.enabled=false,image.repository=localhost,image.tag=5000/kong stable/kong
+helm install --dep-up --name kong --set cassandra.enabled=true,env.db_update_propagation=2,env.database=cassandra,cassandra.enabled=true,postgresql.enabled=false stable/kong
 
 while [[ "$(kubectl get deployment kong-kong | tail -n +2 | awk '{print $4}')" != 1 ]]; do
   echo "waiting for Kong to be ready"
