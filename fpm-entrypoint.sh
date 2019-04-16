@@ -26,8 +26,9 @@ elif [ "$RESTY_IMAGE_BASE" == "amazonlinux" ]; then
   OUTPUT_FILE_SUFFIX=".aws"
 fi
 
-if [ "$ARCHITECTURE" == "armv7l" ]; then
+if [ "$ARCHITECTURE" == "armv7hf" ]; then
   FPM_PARAMS="FPM_PARAMS -d lua-yaml"
+  ARCHITECTURE="armhf"
 fi
 
 ROCKSPEC_VERSION=`basename /tmp/build/build/usr/local/lib/luarocks/rocks/kong/*`
