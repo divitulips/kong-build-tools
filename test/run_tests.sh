@@ -6,7 +6,7 @@ if [[ "$RESTY_IMAGE_BASE" == "src" ]]; then
   exit 0
 fi
 
-docker run -it --rm localhost:5000/kong-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG} /bin/sh -c "luarocks --version"
+docker run -it --rm localhost:5000/kong-${ARCHITECTURE}-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG} /bin/sh -c "luarocks --version"
 
 kubectl apply -f https://github.com/Faithlife/minikube-registry-proxy/raw/master/kube-registry-proxy.yml
 curl -L https://github.com/Faithlife/minikube-registry-proxy/raw/master/docker-compose.yml | MINIKUBE_IP=$(minikube ip) docker-compose -p mkr -f - up -d
