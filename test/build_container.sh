@@ -30,7 +30,7 @@ docker build \
 --build-arg RHEL=$RHEL \
 --build-arg REDHAT_USERNAME=$REDHAT_USERNAME \
 --build-arg REDHAT_PASSWORD=$REDHAT_PASSWORD \
---build-art ARCHITECTURE=$ARCHITECTURE \
---cache-from kong/kong-build-tools:test-$RESTY_IMAGE_BASE-$RESTY_IMAGE_TAG \
+--build-arg ARCHITECTURE=$ARCHITECTURE \
+--cache-from kong/kong-build-tools:test-$ARCHITECTURE-$RESTY_IMAGE_BASE-$RESTY_IMAGE_TAG \
 -f test/$DOCKER_FILE \
 -t $KONG_TEST_CONTAINER_NAME .

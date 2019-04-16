@@ -50,13 +50,13 @@ LYAML_VERSION ?= 6.2.3
 
 update-docker-cache:
 ifneq ($(RESTY_IMAGE_BASE),rhel)
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:fpm
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:$(ARCHITECTURE)-development || true
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:test_runner && echo "success!" || docker push kong/kong-build-tools:test_runner
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker push kong/kong-build-tools:fpm
+	-docker push kong/kong-build-tools:$(ARCHITECTURE)-development
+	-docker push kong/kong-build-tools:test_runner
+	-docker push kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker push kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 	-docker tag $(KONG_TEST_CONTAINER_NAME) kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker push --source kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 endif
 
 pull-docker-cache:
