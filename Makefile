@@ -20,6 +20,7 @@ ifeq ($(RESTY_IMAGE_BASE),alpine)
 endif
 
 EDITION?="community"
+ARCHITECTURE?="all"
 KONG_PACKAGE_NAME?="kong"
 KONG_CONFLICTS?="kong-enterprise-edition"
 KONG_LICENSE?="ASL 2.0"
@@ -108,6 +109,7 @@ package-kong: build-kong
 	-e KONG_LICENSE=$(KONG_LICENSE) \
 	-e RESTY_IMAGE_TAG=$(RESTY_IMAGE_TAG) \
 	-e RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
+	-e ARCHITECTURE=$(ARCHITECTURE) \
 	kong/kong-build-tools:fpm
 
 build-kong:
@@ -133,6 +135,11 @@ build-kong:
 	kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 
 build-base:
+ifeq ($(ARCHITECTURE),armv7l)
+	docker pull balenalib/armv7hf-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
+	docker tag balenalib/armv7hf-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG) $(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
+	docker run --rm --privileged multiarch/qemu-user-static:register --reset
+endif
 ifeq ($(RESTY_IMAGE_BASE),rhel)
 	docker pull registry.access.redhat.com/rhel${RESTY_IMAGE_TAG}
 	docker tag registry.access.redhat.com/rhel${RESTY_IMAGE_TAG} rhel:${RESTY_IMAGE_TAG}

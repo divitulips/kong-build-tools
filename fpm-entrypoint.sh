@@ -8,7 +8,7 @@ FPM_PARAMS=""
 if [ "$RESTY_IMAGE_BASE" == "ubuntu" ] || [ "$RESTY_IMAGE_BASE" == "debian" ]; then
   PACKAGE_TYPE="deb"
   FPM_PARAMS="-d libpcre3 -d perl"
-  OUTPUT_FILE_SUFFIX=".${RESTY_IMAGE_TAG}.all"
+  OUTPUT_FILE_SUFFIX=".${RESTY_IMAGE_TAG}.${ARCHITECTURE}"
 elif [ "$RESTY_IMAGE_BASE" == "centos" ]; then
   PACKAGE_TYPE="rpm"
   FPM_PARAMS="-d pcre -d perl -d perl-Time-HiRes"
@@ -24,6 +24,10 @@ elif [ "$RESTY_IMAGE_BASE" == "amazonlinux" ]; then
   PACKAGE_TYPE="rpm"
   FPM_PARAMS="-d pcre -d perl -d perl-Time-HiRes"
   OUTPUT_FILE_SUFFIX=".aws"
+fi
+
+if [ "$ARCHITECTURE" == "armv7l" ]; then
+  FPM_PARAMS="FPM_PARAMS -d lua-yaml"
 fi
 
 ROCKSPEC_VERSION=`basename /tmp/build/build/usr/local/lib/luarocks/rocks/kong/*`
