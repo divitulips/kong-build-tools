@@ -32,7 +32,7 @@ env:
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=debian RESTY_IMAGE_TAG=stretch KONG_SOURCE=next
     - PACKAGE_TYPE=rpm RESTY_IMAGE_BASE=centos RESTY_IMAGE_TAG=6 KONG_SOURCE=next
     - PACKAGE_TYPE=apk RESTY_IMAGE_BASE=alpine RESTY_IMAGE_TAG=latest KONG_SOURCE=next
-    - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=bionic KONG_SOURCE=next ARCHITECTURE=armv7l
+    - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=xenial KONG_SOURCE=next ARCHITECTURE=armv7hf
 matrix:
   allow_failures:
     - env: PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=devel KONG_SOURCE=master
@@ -45,11 +45,7 @@ matrix:
 
 before_install:
   - make setup_tests >make.log 2>&1 &
-  - docker pull kong/kong-build-tools:fpm || true
-  - docker pull kong/kong-build-tools:test_runner || true
-  - if [ "$ARCHITECTURE" != "armv7l"]; then docker pull kong/kong-build-tools:test-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG}; fi || true
-  - if [ "$ARCHITECTURE" != "armv7l"]; then docker pull kong/kong-build-tools:${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG}; fi || true
-  - if [ "$ARCHITECTURE" != "armv7l"]; then docker pull kong/kong-build-tools:kong-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG}; fi || true
+  - if [ "$TRAVIS_EVENT_TYPE" != "cron" ]; then make pull-docker-cache; fi || true
   - git clone --single-branch --branch ${KONG_SOURCE} https://github.com/Kong/kong.git kong
 
 install:
