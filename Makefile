@@ -20,12 +20,12 @@ ifeq ($(RESTY_IMAGE_BASE),alpine)
 endif
 
 EDITION?="community"
-ARCHITECTURE?="all"
+ARCHITECTURE?=x86_64
 KONG_PACKAGE_NAME?="kong"
 KONG_CONFLICTS?="kong-enterprise-edition"
 KONG_LICENSE?="ASL 2.0"
 PRIVATE_REPOSITORY?=true
-KONG_TEST_CONTAINER_NAME?=localhost:5000/kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+KONG_TEST_CONTAINER_NAME?=localhost:5000/kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 KONG_SOURCE_LOCATION?="$$PWD/../kong/"
 KONG_VERSION?=`echo $(KONG_SOURCE_LOCATION)/kong-*.rockspec | sed 's,.*/,,' | cut -d- -f2`
 RESTY_VERSION ?= `grep RESTY_VERSION $(KONG_SOURCE_LOCATION)/.requirements | awk -F"=" '{print $$2}'`
@@ -51,13 +51,29 @@ LYAML_VERSION ?= 6.2.3
 update-docker-cache:
 ifneq ($(RESTY_IMAGE_BASE),rhel)
 	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:fpm
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:development || true
+	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:$(ARCHITECTURE)-development || true
 	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:test_runner && echo "success!" || docker push kong/kong-build-tools:test_runner
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
-	-docker tag $(KONG_TEST_CONTAINER_NAME) kong/kong-build-tools:test-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
-	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:test-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:test-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker tag $(KONG_TEST_CONTAINER_NAME) kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-./docker_push_latest_if_changed.py --source kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) && echo "success!" || docker push kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 endif
+
+pull-docker-cache:
+	-docker pull kong/kong-build-tools:fpm
+	-docker pull kong/kong-build-tools:$(ARCHITECTURE)-development
+	-docker pull kong/kong-build-tools:test_runner && echo "success!"
+	-docker pull kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker pull kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker pull kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+
+clear-local-docker-cache:
+	-docker rmi kong/kong-build-tools:fpm
+	-docker rmi kong/kong-build-tools:$(ARCHITECTURE)-development
+	-docker rmi kong/kong-build-tools:test_runner && echo "success!"
+	-docker rmi kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker rmi kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker rmi kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 
 release-kong: test
 	RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
@@ -76,7 +92,7 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 	cp output/kong-$(KONG_VERSION).xenial.all.deb output/kong-$(KONG_VERSION).kong-ubuntu-xenial.all.deb
 	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || make build-kong
 	docker build \
-	--cache-from kong/kong-build-tools:development \
+	--cache-from kong/kong-build-tools:$(ARCHITECTURE)-development \
 	--build-arg RESTY_IMAGE_BASE=kong/kong-build-tools \
 	--build-arg RESTY_IMAGE_TAG="kong-ubuntu-xenial" \
 	--build-arg KONG_VERSION=$(KONG_VERSION) \
@@ -84,7 +100,7 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 	--build-arg USER=$$USER \
 	--build-arg RUNAS_USER=$$USER \
 	-f test/Dockerfile.deb \
-	-t kong/kong-build-tools:development .
+	-t kong/kong-build-tools:$(ARCHITECTURE)-development .
 endif
 
 development: build-development-image
@@ -113,31 +129,32 @@ package-kong: build-kong
 	kong/kong-build-tools:fpm
 
 build-kong:
-	docker inspect --type=image kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) > /dev/null || make build-base
+	docker inspect --type=image kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) > /dev/null || make build-base
 	docker build -f Dockerfile.kong \
-	--cache-from kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
+	--cache-from kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
 	--build-arg RESTY_VERSION=$(RESTY_VERSION) \
 	--build-arg RESTY_LUAROCKS_VERSION=$(RESTY_LUAROCKS_VERSION) \
 	--build-arg RESTY_OPENSSL_VERSION=$(RESTY_OPENSSL_VERSION) \
 	--build-arg RESTY_PCRE_VERSION=$(RESTY_PCRE_VERSION) \
 	--build-arg RESTY_IMAGE_TAG="$(RESTY_IMAGE_TAG)" \
 	--build-arg RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
+	--build-arg ARCHITECTURE=$(ARCHITECTURE) \
 	--build-arg OPENSSL_EXTRA_OPTIONS=$(OPENSSL_EXTRA_OPTIONS) \
 	--build-arg LIBYAML_VERSION=$(LIBYAML_VERSION) \
 	--build-arg RESTY_CONFIG_OPTIONS=$(RESTY_CONFIG_OPTIONS) \
 	--build-arg EDITION=$(EDITION) \
 	--build-arg KONG_GMP_VERSION=$(KONG_GMP_VERSION) \
 	--build-arg KONG_NETTLE_VERSION=$(KONG_NETTLE_VERSION) \
-	-t kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
+	-t kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
 	docker run -it --rm \
 	-v $(KONG_SOURCE_LOCATION):/kong \
 	-v $$PWD/output/build:/output/build \
-	kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 
 build-base:
-ifeq ($(ARCHITECTURE),armv7l)
-	docker pull balenalib/armv7hf-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
-	docker tag balenalib/armv7hf-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG) $(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
+ifneq ($(ARCHITECTURE),x86_64)
+	docker pull balenalib/$(ARCHITECTURE)-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
+	docker tag balenalib/$(ARCHITECTURE)-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG) $(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
 endif
 ifeq ($(RESTY_IMAGE_BASE),rhel)
@@ -150,13 +167,13 @@ ifeq ($(RESTY_IMAGE_BASE),rhel)
 	--build-arg RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
 	--build-arg REDHAT_USERNAME=$(REDHAT_USERNAME) \
 	--build-arg REDHAT_PASSWORD=$(REDHAT_PASSWORD) \
-	-t kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
+	-t kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
 else
 	docker build -f Dockerfile.$(PACKAGE_TYPE) \
 	--cache-from kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
 	--build-arg RESTY_IMAGE_TAG="$(RESTY_IMAGE_TAG)" \
 	--build-arg RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
-	-t kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
+	-t kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
 endif
 
 test: build_test_container
@@ -164,6 +181,7 @@ test: build_test_container
 	RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
 	RESTY_IMAGE_TAG=$(RESTY_IMAGE_TAG) \
 	KONG_PACKAGE_NAME=$(KONG_PACKAGE_NAME) \
+	ARCHITECTURE=$(ARCHITECTURE) \
 	./test/run_tests.sh
 
 run_tests:
@@ -184,6 +202,7 @@ build_test_container:
 	KONG_VERSION=$(KONG_VERSION) \
 	KONG_PACKAGE_NAME=$(KONG_PACKAGE_NAME) \
 	KONG_TEST_CONTAINER_NAME=$(KONG_TEST_CONTAINER_NAME) \
+	ARCHITECTURE=$(ARCHITECTURE) \
 	test/build_container.sh
 
 cleanup_tests:

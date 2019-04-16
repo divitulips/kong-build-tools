@@ -5,7 +5,7 @@ elif [ "$RESTY_IMAGE_BASE" == "ubuntu" ] || [ "$RESTY_IMAGE_BASE" == "debian" ];
   DOCKER_FILE="Dockerfile.deb"
 elif [ "$RESTY_IMAGE_BASE" == "centos" ]; then
   DOCKER_FILE="Dockerfile.rpm"
-  cp output/${KONG_PACKAGE_NAME}-${KONG_VERSION}.el${RESTY_IMAGE_TAG}.noarch.rpm output/kong.rpm
+  cp output/${KONG_PACKAGE_NAME}-${KONG_VERSION}.el${RESTY_IMAGE_TAG}.${ARCHITECTURE}.rpm output/kong.rpm
 elif [ "$RESTY_IMAGE_BASE" == "amazonlinux" ]; then
   DOCKER_FILE="Dockerfile.rpm"
   cp output/${KONG_PACKAGE_NAME}-${KONG_VERSION}.aws.rpm output/kong.rpm
@@ -30,6 +30,7 @@ docker build \
 --build-arg RHEL=$RHEL \
 --build-arg REDHAT_USERNAME=$REDHAT_USERNAME \
 --build-arg REDHAT_PASSWORD=$REDHAT_PASSWORD \
+--build-art ARCHITECTURE=$ARCHITECTURE \
 --cache-from kong/kong-build-tools:test-$RESTY_IMAGE_BASE-$RESTY_IMAGE_TAG \
 -f test/$DOCKER_FILE \
 -t $KONG_TEST_CONTAINER_NAME .

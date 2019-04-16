@@ -12,11 +12,11 @@ if [ "$RESTY_IMAGE_BASE" == "ubuntu" ] || [ "$RESTY_IMAGE_BASE" == "debian" ]; t
 elif [ "$RESTY_IMAGE_BASE" == "centos" ]; then
   PACKAGE_TYPE="rpm"
   FPM_PARAMS="-d pcre -d perl -d perl-Time-HiRes"
-  OUTPUT_FILE_SUFFIX=".el${RESTY_IMAGE_TAG}.noarch"
+  OUTPUT_FILE_SUFFIX=".el${RESTY_IMAGE_TAG}.${ARCHITECTURE}"
 elif [ "$RESTY_IMAGE_BASE" == "rhel" ]; then
   PACKAGE_TYPE="rpm"
   FPM_PARAMS="-d pcre -d perl -d perl-Time-HiRes"
-  OUTPUT_FILE_SUFFIX=".rhel${RESTY_IMAGE_TAG}.noarch"
+  OUTPUT_FILE_SUFFIX=".rhel${RESTY_IMAGE_TAG}.${ARCHITECTURE}"
   if [ "$RESTY_IMAGE_TAG" == "7" ]; then
     FPM_PARAMS="$FPM_PARAMS -d hostname"
   fi

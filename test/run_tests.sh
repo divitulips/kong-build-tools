@@ -16,12 +16,12 @@ while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:5000)" != 200 ]];
   sleep 10;
 done 
 
-docker push localhost:5000/kong-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG}
+docker push localhost:5000/kong-${ARCHITECTURE}-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG}
 
 helm init --wait
 helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
 helm repo update
-helm install --dep-up --name kong --set image.repository=localhost,image.tag=5000/kong-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG} stable/kong
+helm install --dep-up --name kong --set image.repository=localhost,image.tag=5000/kong-${ARCHITECTURE}-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG} stable/kong
 
 while [[ "$(kubectl get deployment kong-kong | tail -n +2 | awk '{print $4}')" != 1 ]]; do
   echo "waiting for Kong to be ready"
