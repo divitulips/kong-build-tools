@@ -149,6 +149,7 @@ build-kong:
 	docker run -it --rm \
 	-v $(KONG_SOURCE_LOCATION):/kong \
 	-v $$PWD/output/build:/output/build \
+	-e ARCHITECTURE=$(ARCHITECTURE) \
 	kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 
 build-base:
