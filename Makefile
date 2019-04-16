@@ -58,7 +58,7 @@ ifneq ($(RESTY_IMAGE_BASE),rhel)
 	-docker push kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 	-docker push kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 	-docker tag $(KONG_TEST_CONTAINER_NAME) kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
-	-docker push --source kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
+	-docker push kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 endif
 
 pull-docker-cache:
@@ -120,7 +120,10 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 endif
 
 package-kong: build-kong
-	docker build -f Dockerfile.fpm \
+ifneq ($(ARCHITECTURE),x86_64)
+	-docker pull kong/kong-build-tools:fpm
+endif
+	docker inspect --type=image kong/kong-build-tools:fpm > /dev/null || docker build -f Dockerfile.fpm \
 	--cache-from kong/kong-build-tools:fpm \
 	-t kong/kong-build-tools:fpm .
 	docker run -t --rm \
