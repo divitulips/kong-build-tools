@@ -49,10 +49,12 @@ LIBYAML_VERSION ?= 0.2.1
 LYAML_VERSION ?= 6.2.3
 
 update-docker-cache:
-ifneq ($(RESTY_IMAGE_BASE),rhel)
+ifneq ($(ARCHITECTURE),x86_64)
 	-docker push kong/kong-build-tools:fpm
-	-docker push kong/kong-build-tools:$(ARCHITECTURE)-development
 	-docker push kong/kong-build-tools:test_runner
+endif
+ifneq ($(RESTY_IMAGE_BASE),rhel)
+	-docker push kong/kong-build-tools:$(ARCHITECTURE)-development
 	-docker push kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 	-docker push kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 	-docker tag $(KONG_TEST_CONTAINER_NAME) kong/kong-build-tools:test-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
@@ -87,10 +89,9 @@ release-kong: test
 
 build-development-image:
 ifeq ($(RESTY_IMAGE_TAG),xenial)
-	docker pull kong/kong-build-tools:kong-ubuntu-xenial
-	test -s output/kong-$(KONG_VERSION).xenial.all.deb || make package-kong
-	cp output/kong-$(KONG_VERSION).xenial.all.deb output/kong-$(KONG_VERSION).kong-ubuntu-xenial.all.deb
-	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || make build-kong
+	test -s output/kong-$(KONG_VERSION).xenial.$(ARCHITECTURE).deb || make package-kong
+	cp output/kong-$(KONG_VERSION).xenial.$(ARCHITECTURE).deb output/kong-$(KONG_VERSION).kong-ubuntu-xenial.$(ARCHITECTURE).deb
+	docker tag kong/kong-build-tools:kong-$(ARCHITECTURE)-ubuntu-xenial kong/kong-build-tools:kong-ubuntu-xenial
 	docker build \
 	--cache-from kong/kong-build-tools:$(ARCHITECTURE)-development \
 	--build-arg RESTY_IMAGE_BASE=kong/kong-build-tools \
@@ -99,6 +100,7 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 	--build-arg KONG_UID=$$(id -u) \
 	--build-arg USER=$$USER \
 	--build-arg RUNAS_USER=$$USER \
+	--build-arg ARCHITECTURE=$(ARCHITECTURE) \
 	-f test/Dockerfile.deb \
 	-t kong/kong-build-tools:$(ARCHITECTURE)-development .
 endif
