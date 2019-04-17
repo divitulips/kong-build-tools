@@ -184,6 +184,7 @@ else
 	--cache-from kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
 	--build-arg RESTY_IMAGE_TAG="$(RESTY_IMAGE_TAG)" \
 	--build-arg RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
+	--build-arg ARCHITECTURE=$(ARCHITECTURE) \
 	-t kong/kong-build-tools:$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
 endif
 

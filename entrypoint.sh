@@ -52,10 +52,12 @@ pushd /kong
     mv /tmp/plugin/dist /tmp/build/usr/local/kong/$directory
   done
 
-  /tmp/build/usr/local/bin/luarocks install lyaml $LYAML_VERSION \
-    YAML_LIBDIR=/tmp/build/usr/local/kong/lib \
-    YAML_INCDIR=/tmp/yaml-${LIBYAML_VERSION} \
-    CFLAGS="-L/tmp/build/usr/local/kong/lib -Wl,-rpath,/usr/local/kong/lib -O2 -fPIC"
+  if [ "$ARCHITECTURE" == "amd64" ]; then
+    /tmp/build/usr/local/bin/luarocks install lyaml $LYAML_VERSION \
+      YAML_LIBDIR=/tmp/build/usr/local/kong/lib \
+      YAML_INCDIR=/tmp/yaml-${LIBYAML_VERSION} \
+      CFLAGS="-L/tmp/build/usr/local/kong/lib -Wl,-rpath,/usr/local/kong/lib -O2 -fPIC"
+  fi
 
   /tmp/build/usr/local/bin/luarocks make kong-${ROCKSPEC_VERSION}.rockspec \
     OPENSSL_LIBDIR=/tmp/openssl \
