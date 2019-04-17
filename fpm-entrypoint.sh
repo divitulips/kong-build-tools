@@ -27,8 +27,10 @@ elif [ "$RESTY_IMAGE_BASE" == "amazonlinux" ]; then
 fi
 
 if [ "$ARCHITECTURE" == "armv7hf" ]; then
-  FPM_PARAMS="FPM_PARAMS -d lua-yaml"
+  FPM_PARAMS="$FPM_PARAMS -d lua-yaml"
   ARCHITECTURE="armhf"
+else
+  ARCHITECTURE="all"
 fi
 
 ROCKSPEC_VERSION=`basename /tmp/build/build/usr/local/lib/luarocks/rocks/kong/*`
