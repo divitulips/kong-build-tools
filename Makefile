@@ -20,7 +20,7 @@ ifeq ($(RESTY_IMAGE_BASE),alpine)
 endif
 
 EDITION?="community"
-ARCHITECTURE?=x86_64
+ARCHITECTURE?=amd64
 KONG_PACKAGE_NAME?="kong"
 KONG_CONFLICTS?="kong-enterprise-edition"
 KONG_LICENSE?="ASL 2.0"
@@ -49,7 +49,7 @@ LIBYAML_VERSION ?= 0.2.1
 LYAML_VERSION ?= 6.2.3
 
 update-docker-cache:
-ifneq ($(ARCHITECTURE),x86_64)
+ifneq ($(ARCHITECTURE),amd64)
 	-docker push kong/kong-build-tools:fpm
 	-docker push kong/kong-build-tools:test_runner
 endif
@@ -62,7 +62,7 @@ ifneq ($(RESTY_IMAGE_BASE),rhel)
 endif
 
 pull-docker-cache:
-ifneq ($(ARCHITECTURE),x86_64)
+ifneq ($(ARCHITECTURE),amd64)
 	docker pull balenalib/$(ARCHITECTURE)-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
 	docker tag balenalib/$(ARCHITECTURE)-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG) $(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
@@ -120,7 +120,7 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 endif
 
 package-kong: build-kong
-ifneq ($(ARCHITECTURE),x86_64)
+ifneq ($(ARCHITECTURE),amd64)
 	-docker pull kong/kong-build-tools:fpm
 endif
 	docker inspect --type=image kong/kong-build-tools:fpm > /dev/null || docker build -f Dockerfile.fpm \
@@ -163,7 +163,7 @@ build-kong:
 	kong/kong-build-tools:kong-$(ARCHITECTURE)-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 
 build-base:
-ifneq ($(ARCHITECTURE),x86_64)
+ifneq ($(ARCHITECTURE),amd64)
 	docker pull balenalib/$(ARCHITECTURE)-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
 	docker tag balenalib/$(ARCHITECTURE)-$(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG) $(RESTY_IMAGE_BASE):$(RESTY_IMAGE_TAG)
 	docker run --rm --privileged multiarch/qemu-user-static:register --reset
