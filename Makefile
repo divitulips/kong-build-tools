@@ -208,7 +208,6 @@ develop_tests:
 	kong:test_runner /bin/bash
 
 build_test_container:
-	ls -la output
 	RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
 	RESTY_IMAGE_TAG=$(RESTY_IMAGE_TAG) \
 	KONG_VERSION=$(KONG_VERSION) \
