@@ -141,6 +141,7 @@ build-kong:
 	docker run -it --rm \
 	-v $(KONG_SOURCE_LOCATION):/kong \
 	-v $$PWD/output/build:/output/build \
+	-e GITHUB_ACCESSTOKEN=$(GITHUB_ACCESSTOKEN) \
 	kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 
 build-base:
