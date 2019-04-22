@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -x
 
 ROCKS_CONFIG=$(mktemp)
 echo "
@@ -33,7 +32,6 @@ pushd /kong
     rm -rf /tmp/plugin || true
     echo "Processing $line"
     repo_url=$(echo $line | cut -d " " -f1)
-    echo $repo_url
     version=$(echo $line | cut -d " " -f2)
     git clone --branch $version --recursive $repo_url /tmp/plugin/
     cd /tmp/plugin/
@@ -44,6 +42,7 @@ pushd /kong
   grep https://api.github.com .requirements | while read -r line ; do
     rm -rf /tmp/plugin || true
     rm -rf /tmp/release.tar.gz || true
+    mkdir -p /tmp/plugin
     echo "Processing $line"
     github_url=$(echo $line | cut -d " " -f1)
     asset_url=`curl $github_url?access_token=$GITHUB_ACCESSTOKEN | grep \/assets\/ | cut -d '"' -f 4`
