@@ -1,4 +1,4 @@
-.PHONY: test build-kong
+.PHONY: test build-kong build-development-image
 
 export SHELL:=/bin/bash
 
@@ -80,6 +80,7 @@ build-development-image:
 ifeq ($(RESTY_IMAGE_TAG),xenial)
 	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || docker pull kong/kong-build-tools:kong-ubuntu-xenial
 	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || make build-kong
+	docker pull kong/kong-build-tools:development
 	test -s output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb || make package-kong
 	cp output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb output/kong-$(KONG_VERSION).kong-ubuntu-xenial.all.deb
 	docker build \
