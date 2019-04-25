@@ -78,11 +78,10 @@ release-kong: test
 
 build-development-image:
 ifeq ($(RESTY_IMAGE_TAG),xenial)
+	docker inspect --type=image kong/kong-build-tools:ubuntu-xenial > /dev/null || docker pull kong/kong-build-tools:ubuntu-xenial
 	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || docker pull kong/kong-build-tools:kong-ubuntu-xenial
-	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || make build-kong
-	docker pull kong/kong-build-tools:development
-	test -s output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb || make package-kong
-	cp output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb output/kong-$(KONG_VERSION).kong-ubuntu-xenial.all.deb
+	make build-kong
+	curl -Lo output/kong-$(KONG_VERSION).kong-ubuntu-xenial.all.deb https://kong.bintray.com/kong-deb/kong-$(KONG_VERSION).xenial.all.deb
 	docker build \
 	--cache-from kong/kong-build-tools:development \
 	--build-arg RESTY_IMAGE_BASE=kong/kong-build-tools \
