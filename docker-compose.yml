@@ -1,5 +1,11 @@
 version: '2.1'
 services:
+  dbs:
+    image: alpine
+    depends_on:
+      - postgres
+      - cassandra
+      - redis
   kong:
     image: kong/kong-build-tools:development
     entrypoint: tail -f /dev/null
