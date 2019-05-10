@@ -78,10 +78,10 @@ release-kong: test
 
 build-development-image:
 ifeq ($(RESTY_IMAGE_TAG),xenial)
-	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || docker pull kong/kong-build-tools:kong-ubuntu-xenial
 	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || make build-kong
 	test -s output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb || make package-kong
 	cp output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb output/kong-$(KONG_VERSION).kong-ubuntu-xenial.all.deb
+	- docker inspect --type=image kong/kong-build-tools:development > /dev/null || docker pull kong/kong-build-tools:development
 	docker build \
 	--cache-from kong/kong-build-tools:development \
 	--build-arg RESTY_IMAGE_BASE=kong/kong-build-tools \
@@ -94,6 +94,12 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 	-t kong/kong-build-tools:development .
 endif
 
+DEVELOPMENT_COMMAND?=/bin/bash
+KONG_DATABASE?=postgres
+TEST ?= "spec"
+test-kong:
+	DEVELOPMENT_COMMAND="make test" make development
+
 development: build-development-image
 ifeq ($(RESTY_IMAGE_TAG),xenial)
 	- docker-compose stop
@@ -101,12 +107,13 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 	USER=$$(id -u) docker-compose up -d && \
 	docker-compose exec kong make dev && \
 	docker-compose exec kong ln -s /usr/local/openresty/bin/resty /usr/local/bin/resty && \
-	docker-compose exec kong /bin/bash
+	docker-compose exec kong $(DEVELOPMENT_COMMAND)
 endif
 
 package-kong:
 ifneq ($(RESTY_IMAGE_BASE),src)
 	if [ ! -d "output/build/usr" ]; then make build-kong; fi
+	- docker pull kong/kong-build-tools:fpm
 	docker build -f Dockerfile.fpm \
 	--cache-from kong/kong-build-tools:fpm \
 	-t kong/kong-build-tools:fpm .
@@ -123,6 +130,7 @@ endif
 
 build-kong:
 	docker inspect --type=image kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) > /dev/null || make build-base
+	- docker inspect --type=image kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) > /dev/null || docker pull kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 	docker build -f Dockerfile.kong \
 	--cache-from kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
 	--build-arg RESTY_VERSION=$(RESTY_VERSION) \
@@ -156,6 +164,7 @@ ifeq ($(RESTY_IMAGE_BASE),rhel)
 	--build-arg REDHAT_PASSWORD=$(REDHAT_PASSWORD) \
 	-t kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
 else
+	- docker inspect --type=image kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) > /dev/null || docker pull kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 	docker build -f Dockerfile.$(PACKAGE_TYPE) \
 	--cache-from kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
 	--build-arg RESTY_IMAGE_TAG="$(RESTY_IMAGE_TAG)" \
