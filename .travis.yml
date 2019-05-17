@@ -55,10 +55,12 @@ matrix:
 
 before_install:
   - make setup_tests >make.log 2>&1 &
+  - sudo apt-get purge docker-ce
   - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) test"
   - sudo apt-get update
   - sudo apt-cache madison docker-ce
   - sudo apt-get install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io
+  - docker version
   - curl -L ${DOCKER_MACHINE}/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine
   - sudo install /tmp/docker-machine /usr/local/bin/docker-machine
   - docker-machine create --driver amazonec2 --amazonec2-access-key $AWS_ACCESS_KEY --amazonec2-secret-key $AWS_SECRET_KEY --amazonec2-instance-type a1.4xlarge --amazonec2-region us-east-1 --amazonec2-ami ami-01ac7d9c1179d7b74 $TRAVIS_JOB_ID
