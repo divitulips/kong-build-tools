@@ -67,6 +67,8 @@ before_install:
   - docker-machine config $TRAVIS_JOB_ID
   - export HOST=$(docker-machine url $TRAVIS_JOB_ID)
   - docker context create $TRAVIS_JOB_ID --docker "host=$(docker-machine url $TRAVIS_JOB_ID),ca=/home/$USER/.docker/machine/machines/$TRAVIS_JOB_ID/ca.pem,cert=/home/$USER/.docker/machine/machines/$TRAVIS_JOB_ID/cert.pem,key=/home/$USER/.docker/machine/machines/$TRAVIS_JOB_ID/key.pem"
+  - reset
+  - docker buildx create --help
   - docker buildx create --name builder
   - docker buildx create --name builder --append $TRAVIS_JOB_ID
   - docker buildx use builder
