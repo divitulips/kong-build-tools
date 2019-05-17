@@ -6,6 +6,7 @@ RESTY_IMAGE_BASE?=ubuntu
 RESTY_IMAGE_TAG?=xenial
 PACKAGE_TYPE?=deb
 PACKAGE_TYPE?=debian
+ARCHITECTURE?=linux/amd64
 
 TEST_ADMIN_PROTOCOL?=http://
 TEST_ADMIN_PORT?=8001
@@ -82,7 +83,7 @@ ifeq ($(RESTY_IMAGE_TAG),xenial)
 	docker inspect --type=image kong/kong-build-tools:kong-ubuntu-xenial > /dev/null || make build-kong
 	test -s output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb || make package-kong
 	cp output/$(KONG_PACKAGE_NAME)-$(KONG_VERSION).xenial.all.deb output/kong-$(KONG_VERSION).kong-ubuntu-xenial.all.deb
-	docker build \
+	docker buildx build --push --platform=$(ARCHITECTURE) \
 	--cache-from kong/kong-build-tools:development \
 	--build-arg RESTY_IMAGE_BASE=kong/kong-build-tools \
 	--build-arg RESTY_IMAGE_TAG="kong-ubuntu-xenial" \
@@ -107,7 +108,7 @@ endif
 package-kong:
 ifneq ($(RESTY_IMAGE_BASE),src)
 	if [ ! -d "output/build/usr" ]; then make build-kong; fi
-	docker build -f Dockerfile.fpm \
+	docker buildx build --push --platform=$(ARCHITECTURE) -f Dockerfile.fpm \
 	--cache-from kong/kong-build-tools:fpm \
 	-t kong/kong-build-tools:fpm .
 	docker run -t --rm \
@@ -123,7 +124,8 @@ endif
 
 build-kong:
 	docker inspect --type=image kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) > /dev/null || make build-base
-	docker build -f Dockerfile.kong \
+	-cp -R $(KONG_SOURCE_LOCATION) kong
+	docker buildx build --push --platform=$(ARCHITECTURE) -f Dockerfile.kong \
 	--cache-from kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
 	--build-arg RESTY_VERSION=$(RESTY_VERSION) \
 	--build-arg RESTY_LUAROCKS_VERSION=$(RESTY_LUAROCKS_VERSION) \
@@ -138,17 +140,13 @@ build-kong:
 	--build-arg KONG_GMP_VERSION=$(KONG_GMP_VERSION) \
 	--build-arg KONG_NETTLE_VERSION=$(KONG_NETTLE_VERSION) \
 	-t kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
-	docker run -it --rm \
-	-v $(KONG_SOURCE_LOCATION):/kong \
-	-v $$PWD/output/build:/output/build \
-	kong/kong-build-tools:kong-$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG)
 
 build-base:
 ifeq ($(RESTY_IMAGE_BASE),rhel)
 	docker pull registry.access.redhat.com/rhel${RESTY_IMAGE_TAG}
 	docker tag registry.access.redhat.com/rhel${RESTY_IMAGE_TAG} rhel:${RESTY_IMAGE_TAG}
 	PACKAGE_TYPE=rpm
-	@docker build -f Dockerfile.$(PACKAGE_TYPE) \
+	@docker buildx build --push --platform=$(ARCHITECTURE) -f Dockerfile.$(PACKAGE_TYPE) \
 	--build-arg RHEL=true \
 	--build-arg RESTY_IMAGE_TAG="$(RESTY_IMAGE_TAG)" \
 	--build-arg RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
@@ -156,7 +154,7 @@ ifeq ($(RESTY_IMAGE_BASE),rhel)
 	--build-arg REDHAT_PASSWORD=$(REDHAT_PASSWORD) \
 	-t kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) .
 else
-	docker build -f Dockerfile.$(PACKAGE_TYPE) \
+	docker buildx build --push --platform=$(ARCHITECTURE) -f Dockerfile.$(PACKAGE_TYPE) \
 	--cache-from kong/kong-build-tools:$(RESTY_IMAGE_BASE)-$(RESTY_IMAGE_TAG) \
 	--build-arg RESTY_IMAGE_TAG="$(RESTY_IMAGE_TAG)" \
 	--build-arg RESTY_IMAGE_BASE=$(RESTY_IMAGE_BASE) \
@@ -171,7 +169,7 @@ test: build_test_container
 	./test/run_tests.sh
 
 run_tests:
-	cd test && docker build -t kong/kong-build-tools:test_runner --cache-from kong/kong-build-tools:test_runner -f Dockerfile.test_runner .
+	cd test && docker buildx build --push --platform=$(ARCHITECTURE) -t kong/kong-build-tools:test_runner --cache-from kong/kong-build-tools:test_runner -f Dockerfile.test_runner .
 	docker run -it --network host -e RESTY_VERSION=$(RESTY_VERSION) -e KONG_VERSION=$(KONG_VERSION) -e ADMIN_URI=$(TEST_ADMIN_URI) -e PROXY_URI=$(TEST_PROXY_URI) ubuntu printenv
 	docker run -it --network host -e RESTY_VERSION=$(RESTY_VERSION) -e KONG_VERSION=$(KONG_VERSION) -e ADMIN_URI=$(TEST_ADMIN_URI) -e PROXY_URI=$(TEST_PROXY_URI) kong/kong-build-tools:test_runner /bin/bash -c "py.test -p no:logging -p no:warnings test_*.tavern.yaml"
 

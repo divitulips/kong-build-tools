@@ -70,5 +70,6 @@ sed -i.bak 's@#!/usr/bin/env resty@#!/usr/bin/env /usr/local/openresty/bin/resty
 sed -i 's/\/tmp\/build//' `find /tmp/build/usr/local/bin/ -maxdepth 1 -type f`
 sed -i 's/\/tmp\/build//' `find /tmp/build/usr/local/share/lua/5.1/luarocks/ -maxdepth 1 -type f`
 
-cp -R /tmp/build/* /output/build/
+mkdir -p /output/build/${TARGETPLATFORM}
+cp -R /tmp/build/* /output/build/${TARGETPLATFORM}
 chown -R 1000:1000 /output/*

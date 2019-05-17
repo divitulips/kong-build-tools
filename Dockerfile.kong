@@ -3,6 +3,7 @@ ARG RESTY_IMAGE_TAG="xenial"
 
 FROM kong/kong-build-tools:${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG}
 
+ARG TARGETPLATFORM
 RUN mkdir -p /tmp/build
 
 ARG LIBYAML_VERSION=0.2.1
@@ -58,7 +59,7 @@ RUN curl -fsSLo /tmp/openssl-${RESTY_OPENSSL_VERSION}.tar.gz https://www.openssl
     && tar xzf openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
     && ln -s /tmp/openssl-${RESTY_OPENSSL_VERSION} /tmp/openssl \
     && cd /tmp/openssl \
-    && eval ./config --prefix=/tmp/build/usr/local/kong --openssldir=/tmp/build/usr/local/kong ${OPENSSL_EXTRA_OPTIONS} -fPIC shared \
+    && eval ./config no-asm --prefix=/tmp/build/usr/local/kong --openssldir=/tmp/build/usr/local/kong ${OPENSSL_EXTRA_OPTIONS} -fPIC shared \
     && make -j${RESTY_J} \
     && make install_sw
 
@@ -104,11 +105,14 @@ RUN curl -fsSLo /tmp/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz https://github.co
 COPY install-lyaml.sh /tmp/install-lyaml.sh
 RUN /tmp/install-lyaml.sh
 
+COPY kong/ /kong
+COPY entrypoint.sh /entrypoint.sh
+RUN /entrypoint.sh
+
 WORKDIR /kong
 
 ENV LUA_PATH /tmp/build/usr/local/share/lua/5.1/?.lua;/tmp/build/usr/local/openresty/luajit/share/luajit-2.1.0-beta3/?.lua;;
 
-COPY entrypoint.sh /entrypoint.sh
 
 CMD ["/entrypoint.sh"]
 
