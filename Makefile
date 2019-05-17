@@ -107,8 +107,17 @@ endif
 
 package-kong:
 ifneq ($(RESTY_IMAGE_BASE),src)
-	if [ ! -d "output/build/usr" ]; then make build-kong; fi
-	docker buildx build --push --platform=$(ARCHITECTURE) -f Dockerfile.fpm \
+	docker pull --platform linux/arm/v6 kong/kong-build-tools:kong-alpine-latest
+	docker create --name kong-armv6 kong/kong-build-tools:kong-alpine-latest
+	docker cp kong-armv6:/output .
+	-docker stop kong-armv6
+	docker rm kong-armv6
+	docker pull --platform linux/amd64 kong/kong-build-tools:kong-alpine-latest
+	docker create --name kong-amd64 kong/kong-build-tools:kong-alpine-latest
+	docker cp kong-amd64:/output .
+	-docker stop kong-amd64
+	docker rm kong-amd64
+	docker build -f Dockerfile.fpm \
 	--cache-from kong/kong-build-tools:fpm \
 	-t kong/kong-build-tools:fpm .
 	docker run -t --rm \

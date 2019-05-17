@@ -16,6 +16,7 @@ env:
     - KONG_PACKAGE_NAME=kong
     - KONG_CONFLICTS=kong-enterprise
     - KONG_LICENSE="ASL 2.0"
+    - DOCKER_MACHINE=https://github.com/docker/machine/releases/download/v0.16.0
   matrix:
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=devel KONG_SOURCE=master
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=rolling KONG_SOURCE=master
@@ -31,11 +32,11 @@ env:
     - PACKAGE_TYPE=rpm RESTY_IMAGE_BASE=rhel RESTY_IMAGE_TAG=6 KONG_SOURCE=master
     - PACKAGE_TYPE=rpm RESTY_IMAGE_BASE=rhel RESTY_IMAGE_TAG=7 KONG_SOURCE=master
     - PACKAGE_TYPE=rpm RESTY_IMAGE_BASE=amazonlinux RESTY_IMAGE_TAG=latest KONG_SOURCE=master
-    - PACKAGE_TYPE=apk RESTY_IMAGE_BASE=alpine RESTY_IMAGE_TAG=latest KONG_SOURCE=master
+    - PACKAGE_TYPE=apk RESTY_IMAGE_BASE=alpine RESTY_IMAGE_TAG=latest KONG_SOURCE=master ARCHITECTURE=linux/arm/v6,linux/amd64
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=trusty KONG_SOURCE=next
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=debian RESTY_IMAGE_TAG=stretch KONG_SOURCE=next
     - PACKAGE_TYPE=rpm RESTY_IMAGE_BASE=centos RESTY_IMAGE_TAG=6 KONG_SOURCE=next
-    - PACKAGE_TYPE=apk RESTY_IMAGE_BASE=alpine RESTY_IMAGE_TAG=latest KONG_SOURCE=next
+    - PACKAGE_TYPE=apk RESTY_IMAGE_BASE=alpine RESTY_IMAGE_TAG=latest KONG_SOURCE=next ARCHITECTURE=linux/arm/v6,linux/amd64
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=bionic KONG_SOURCE=master POSTGRES_VERSION=9.6
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=bionic KONG_SOURCE=master POSTGRES_VERSION=10
     - PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=bionic KONG_SOURCE=master POSTGRES_VERSION=11
@@ -53,14 +54,24 @@ matrix:
 
 before_install:
   - make setup_tests >make.log 2>&1 &
-  - docker pull kong/kong-build-tools:fpm || true
-  - docker pull kong/kong-build-tools:test_runner || true
-  - docker pull kong/kong-build-tools:test-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG} || true
-  - docker pull kong/kong-build-tools:${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG} || true
-  - docker pull kong/kong-build-tools:kong-${RESTY_IMAGE_BASE}-${RESTY_IMAGE_TAG} || true
+  - sudo apt-get purge docker-ce
+  - curl -fsSL https://get.docker.com/ -o docker-install.sh
+  - CHANNEL=nightly sh docker-install.sh
+  - curl -L ${DOCKER_MACHINE}/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine
+  - sudo install /tmp/docker-machine /usr/local/bin/docker-machine
+  - docker-machine create --driver amazonec2 --amazonec2-access-key $AWS_ACCESS_KEY --amazonec2-secret-key $AWS_SECRET_KEY --amazonec2-instance-type a1.4xlarge --amazonec2-region us-east-1 --amazonec2-ami ami-01ac7d9c1179d7b74 $TRAVIS_JOB_ID
+  - docker-machine config $TRAVIS_JOB_ID
+  - export HOST=$(docker-machine url $TRAVIS_JOB_ID)
+  - docker context create $TRAVIS_JOB_ID --docker "host=$(docker-machine url $TRAVIS_JOB_ID),ca=/home/$USER/.docker/machine/machines/$TRAVIS_JOB_ID/ca.pem,cert=/home/$USER/.docker/machine/machines/$TRAVIS_JOB_ID/cert.pem,key=/home/$USER/.docker/machine/machines/$TRAVIS_JOB_ID/key.pem"
+  - docker buildx create --name builder
+  - docker buildx create --name builder --append $TRAVIS_JOB_ID
+  - docker buildx use builder
+  - docker buildx inspect --bootstrap
   - git clone --single-branch --branch ${KONG_SOURCE} https://github.com/Kong/kong.git kong
 
 install:
+  - make build-base
+  - make build-kong
   - make package-kong
 
 before_script:
@@ -69,6 +80,9 @@ before_script:
 
 script:
   - make test
+
+after:
+  - docker-machine rm --force $TRAVIS_JOB_ID
 
 after_success:
   - if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then make build-development-image; fi

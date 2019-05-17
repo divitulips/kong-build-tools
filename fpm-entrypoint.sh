@@ -29,8 +29,11 @@ fi
 ROCKSPEC_VERSION=`basename /tmp/build/build/usr/local/lib/luarocks/rocks/kong/*`
 
 if [ "$RESTY_IMAGE_BASE" == "alpine" ]; then
-  pushd /tmp/build
-    tar -zcvf /output/${KONG_PACKAGE_NAME}-${KONG_VERSION}${OUTPUT_FILE_SUFFIX}.apk.tar.gz usr etc
+  pushd /tmp/build/linux/arm/v6
+    tar -zcvf /output/${KONG_PACKAGE_NAME}-${KONG_VERSION}${OUTPUT_FILE_SUFFIX}.arm.apk.tar.gz usr etc
+  popd
+  pushd /tmp/build/linux/amd64
+    tar -zcvf /output/${KONG_PACKAGE_NAME}-${KONG_VERSION}${OUTPUT_FILE_SUFFIX}.x86_64.apk.tar.gz usr etc
   popd
 else
   fpm -a all -f -s dir \
