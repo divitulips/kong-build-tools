@@ -54,10 +54,10 @@ matrix:
     - env: PACKAGE_TYPE=deb RESTY_IMAGE_BASE=ubuntu RESTY_IMAGE_TAG=bionic KONG_SOURCE=master POSTGRES_VERSION=11
 
 before_install:
-  - make setup_tests >make.log 2>&1 &
   - sudo apt purge docker-ce
   - curl -fsSL https://get.docker.com/ -o docker-install.sh
   - CHANNEL=nightly sh docker-install.sh
+  - make setup_tests >make.log 2>&1 &
   - docker version
   - curl -L ${DOCKER_MACHINE}/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine
   - sudo install /tmp/docker-machine /usr/local/bin/docker-machine
