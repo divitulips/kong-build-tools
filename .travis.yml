@@ -58,6 +58,7 @@ before_install:
   - curl -fsSL https://get.docker.com/ -o docker-install.sh
   - CHANNEL=nightly sh docker-install.sh
   - make setup_tests >make.log 2>&1 &
+  - echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker version
   - curl -L ${DOCKER_MACHINE}/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine
