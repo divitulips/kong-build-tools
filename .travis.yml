@@ -57,7 +57,6 @@ before_install:
   - sudo apt purge docker-ce
   - curl -fsSL https://get.docker.com/ -o docker-install.sh
   - CHANNEL=nightly sh docker-install.sh
-  - make setup_tests >make.log 2>&1 &
   - echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker version
@@ -70,6 +69,7 @@ before_install:
   - docker buildx use $BUILDX_NAME
   - docker buildx inspect --bootstrap
   - git clone --single-branch --branch ${KONG_SOURCE} https://github.com/Kong/kong.git kong
+  - make setup_tests >make.log 2>&1 &
 
 install:
   - make build-base
