@@ -53,7 +53,7 @@ pushd /kong
     mv /tmp/plugin/dist /tmp/build/usr/local/kong/$directory
   done
 
-  /tmp/build/usr/local/bin/luarocks make kong-${ROCKSPEC_VERSION}.rockspec \
+  luarocks make kong-${ROCKSPEC_VERSION}.rockspec \
     OPENSSL_LIBDIR=/tmp/openssl \
     OPENSSL_DIR=/tmp/openssl
 
@@ -70,5 +70,6 @@ sed -i.bak 's@#!/usr/bin/env resty@#!/usr/bin/env /usr/local/openresty/bin/resty
 sed -i 's/\/tmp\/build//' `find /tmp/build/usr/local/bin/ -maxdepth 1 -type f`
 sed -i 's/\/tmp\/build//' `find /tmp/build/usr/local/share/lua/5.1/luarocks/ -maxdepth 1 -type f`
 
+mkdir -p /output/build/
 cp -R /tmp/build/* /output/build/
 chown -R 1000:1000 /output/*

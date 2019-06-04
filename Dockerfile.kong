@@ -7,60 +7,13 @@ RUN mkdir -p /tmp/build
 
 ARG LIBYAML_VERSION=0.2.1
 ENV LIBYAML_VERSION $LIBYAML_VERSION
-RUN curl -fsSLo /tmp/yaml-${LIBYAML_VERSION}.tar.gz https://pyyaml.org/download/libyaml/yaml-${LIBYAML_VERSION}.tar.gz \
-    && cd /tmp \
-    && tar xzf yaml-${LIBYAML_VERSION}.tar.gz \
-    && ln -s /tmp/yaml-${LIBYAML_VERSION} /tmp/yaml \
-    && cd /tmp/yaml \
-    && ./configure \
-      --libdir=/tmp/build/usr/local/kong/lib \
-      --includedir=/tmp/yaml-${LIBYAML_VERSION} \
-    && make install
 
-ARG KONG_GMP_VERSION=6.1.2
-RUN if [ "$EDITION" = "enterprise" ] ; then curl -fsSLo /tmp/gmp-${KONG_GMP_VERSION}.tar.bz2 https://ftp.gnu.org/gnu/gmp/gmp-${KONG_GMP_VERSION}.tar.bz2 \
-    && cd /tmp \
-    && tar xjf gmp-${KONG_GMP_VERSION}.tar.bz2 \
-    && ln -s /tmp/gmp-${KONG_GMP_VERSION} /tmp/gmp \
-    && cd /tmp/gmp \
-    && ./configure --build=x86_64-linux-gnu --enable-static=no --libdir=/tmp/build/usr/local/kong/lib \
-    && make -j${RESTY_J}; fi
-
-ARG KONG_NETTLE_VERSION=3.4.1
-RUN if [ "$EDITION" = "enterprise" ] ; then curl -fsSLo /tmp/nettle-${KONG_NETTLE_VERSION}.tar.gz https://ftp.gnu.org/gnu/nettle/nettle-${KONG_NETTLE_VERSION}.tar.gz \
-    && cd /tmp \
-    && tar xzf nettle-${KONG_NETTLE_VERSION}.tar.gz \
-    && ln -s /tmp/nettle-${KONG_NETTLE_VERSION} /tmp/nettle \
-    && cd /tmp/nettle \
-    && LDFLAGS="-Wl,-rpath,/usr/local/kong/lib" \
-    ./configure --disable-static \
-    --libdir=$BUILD/usr/local/kong/lib \
-    --with-include-path="/tmp/gmp-${KONG_GMP_VERSION}/" \
-    --with-lib-path="/tmp/gmp-${KONG_GMP_VERSION}/.libs/" \
-    && make -j${RESTY_J}; fi
-
-RUN curl -fsSLo /tmp/kong-patches.tar.gz https://github.com/Kong/openresty-patches/archive/master.tar.gz
 ARG RESTY_VERSION=1.13.6.2
 LABEL resty_version="${RESTY_VERSION}"
-RUN curl -fsSLo /tmp/openresty-${RESTY_VERSION}.tar.gz https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz \
-    && cd /tmp \
-    && tar xzf openresty-${RESTY_VERSION}.tar.gz \
-    && ln -s /tmp/openresty-${RESTY_VERSION} /tmp/openresty \
-    && tar -xzf kong-patches.tar.gz -C /tmp \
-    && cd /tmp/openresty/bundle/ \
-    && for i in /tmp/openresty-patches-master/patches/${RESTY_VERSION}/*.patch; do patch -p1 < $i; done
 
 ARG OPENSSL_EXTRA_OPTIONS
 ARG RESTY_OPENSSL_VERSION=1.1.1
 LABEL resty_openssl_version="${RESTY_OPENSSL_VERSION}"
-RUN curl -fsSLo /tmp/openssl-${RESTY_OPENSSL_VERSION}.tar.gz https://www.openssl.org/source/openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
-    && cd /tmp \
-    && tar xzf openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
-    && ln -s /tmp/openssl-${RESTY_OPENSSL_VERSION} /tmp/openssl \
-    && cd /tmp/openssl \
-    && eval ./config --prefix=/tmp/build/usr/local/kong --openssldir=/tmp/build/usr/local/kong ${OPENSSL_EXTRA_OPTIONS} -fPIC shared \
-    && make -j${RESTY_J} \
-    && make install_sw
 
 ARG RESTY_PCRE_VERSION=8.41
 ARG RESTY_J=2
@@ -78,37 +31,22 @@ ARG RESTY_CONFIG_OPTIONS="\
     "
 LABEL resty_config_options="${RESTY_CONFIG_OPTIONS}"
 LABEL resty_pcre_version="${RESTY_PCRE_VERSION}"
-RUN curl -fsSLo /tmp/pcre-${RESTY_PCRE_VERSION}.tar.gz https://ftp.pcre.org/pub/pcre/pcre-${RESTY_PCRE_VERSION}.tar.gz \
-    && cd /tmp \
-    && tar xzf pcre-${RESTY_PCRE_VERSION}.tar.gz \
-    && ln -s /tmp/pcre-${RESTY_PCRE_VERSION} /tmp/pcre \
-    && cd /tmp/openresty \
-    && eval ./configure -j${RESTY_J} ${RESTY_CONFIG_OPTIONS} \
-    && make -j${RESTY_J} \
-    && make -j${RESTY_J} install DESTDIR=/tmp/build
 
 ARG RESTY_LUAROCKS_VERSION=2.4.3
 LABEL resty_luarocks_version="${RESTY_LUAROCKS_VERSION}"
-RUN curl -fsSLo /tmp/luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz https://github.com/luarocks/luarocks/archive/${RESTY_LUAROCKS_VERSION}.tar.gz \
-    && cd /tmp \
-    && tar xzf luarocks-${RESTY_LUAROCKS_VERSION}.tar.gz \
-    && ln -s /tmp/luarocks-${RESTY_LUAROCKS_VERSION} /tmp/luarocks \
-    && cd /tmp/luarocks \
-    && eval ./configure \
-        --lua-suffix=jit \
-        --with-lua=/tmp/build/usr/local/openresty/luajit \
-        --with-lua-include=/tmp/build/usr/local/openresty/luajit/include/luajit-2.1 \
-    && make build \
-    && make install DESTDIR=/tmp/build
-
-COPY install-lyaml.sh /tmp/install-lyaml.sh
-RUN /tmp/install-lyaml.sh
 
 WORKDIR /kong
 
 ENV LUA_PATH /tmp/build/usr/local/share/lua/5.1/?.lua;/tmp/build/usr/local/openresty/luajit/share/luajit-2.1.0-beta3/?.lua;;
 
 COPY entrypoint.sh /entrypoint.sh
+COPY openresty-build-tools/kong-ngx-build /kong-ngx-build
+RUN /kong-ngx-build -p /tmp/build/ \
+    --openresty ${RESTY_VERSION} \
+    --openssl ${RESTY_OPENSSL_VERSION} \
+    --luarocks ${RESTY_LUAROCKS_VERSION} \
+    --pcre 8.41 \
+    --work /tmp
 
 CMD ["/entrypoint.sh"]
 
